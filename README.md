@@ -10,7 +10,7 @@ Applying AutoML on forecasting energy profiles.
 
 - [TPOT](https://epistasislab.github.io/tpot/installing/)
 - [Autosklearn](https://automl.github.io/auto-sklearn/master/installation.html)
-- [ ] NAS: Neural Network method
+- NAS: Neural Network method, yet decided
 
 ## Training pipeline
 
@@ -24,10 +24,9 @@ from tpot import TPOTRegressor
 import tpot_multi
 tpot_reg = TPOTRegressor(config_dict = tpot_multi)
 tpot_reg.fit(train_X, train_y)
-
 ```
 
-Costomize your configuration of algorithm searching by modifying``tpot_multi.py`
+Costomize your configuration of algorithm searching by modifying``tpot_multi.py`.\\
 For more detail, see [Customizing TPOT](https://epistasislab.github.io/tpot/using/#customizing-tpots-operators-and-parameters)
 
 
