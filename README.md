@@ -10,7 +10,7 @@ Applying AutoML on forecasting energy profiles.
 
 - [TPOT](https://epistasislab.github.io/tpot/installing/)
 - [Autosklearn](https://automl.github.io/auto-sklearn/master/installation.html)
-- NAS: Neural Network method, yet decided
+- NAS: Neural Network method, has yet to decide.
 
 ## Training pipeline
 
