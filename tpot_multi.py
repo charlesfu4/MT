@@ -21,8 +21,8 @@ mul_reg_config_dict = {
         }
     },
 
-    'sklearn.multioutput.MultiOutputRegressor':{
-        'estimator':{
+    'sklearn.multioutput.MultiOutputRegressor': {
+        'estimator': {
             'xgboost.XGBRegressor': {
                 'n_estimators': [100],
                 'max_depth': range(1, 11),
@@ -32,31 +32,32 @@ mul_reg_config_dict = {
                 'nthread': [1],
                 'objective': ['reg:squarederror']
             }    
-        }  
+        
+        }
     },
 
-    'sklearn.multioutput.MultiOutputRegressor':{
-        'estimator':{
+    'sklearn.multioutput.MultiOutputRegressor': {
+        'estimator': {
             'sklearn.ensemble.AdaBoostRegressor': {
                 'n_estimators': [100],
                 'learning_rate': [1e-3, 1e-2, 1e-1, 0.5, 1.],
                 'loss': ["linear", "square", "exponential"]
             }    
-        }  
-    },
 
-    'sklearn.multioutput.MultiOutputRegressor':{
-        'estimator':{
+        }
+    },
+    'sklearn.multioutput.MultiOutputRegressor': {
+        'estimator': {
             'sklearn.neighbors.KNeighborsRegressor': {
                 'n_neighbors': range(1, 101),
                 'weights': ["uniform", "distance"],
                 'p': [1, 2]
             }
+
         }
     },
-
-    'sklearn.multioutput.MultiOutputRegressor':{
-        'estimator':{
+    'sklearn.multioutput.MultiOutputRegressor': {
+        'estimator': {
             'sklearn.svm.LinearSVR': {
                 'loss': ["epsilon_insensitive", "squared_epsilon_insensitive"],
                 'dual': [True, False],
@@ -64,11 +65,11 @@ mul_reg_config_dict = {
                 'C': [1e-4, 1e-3, 1e-2, 1e-1, 0.5, 1., 5., 10., 15., 20., 25.],
                 'epsilon': [1e-4, 1e-3, 1e-2, 1e-1, 1.]
             }
+
         }
     },
-
-    'sklearn.multioutput.MultiOutputRegressor':{
-        'estimator':{
+    'sklearn.multioutput.MultiOutputRegressor': {
+        'estimator': {
             'sklearn.linear_model.SGDRegressor': {
                 'loss': ['squared_loss', 'huber', 'epsilon_insensitive'],
                 'penalty': ['elasticnet'],
@@ -79,10 +80,8 @@ mul_reg_config_dict = {
                 'eta0': [0.1, 1.0, 0.01],
                 'power_t': [0.5, 0.0, 1.0, 0.1, 100.0, 10.0, 50.0]
              }
-        }
+         }   
     },
-
-
 
     #regressors need not wrappers
     'sklearn.linear_model.MultiTaskElasticNetCV': {
@@ -115,12 +114,8 @@ mul_reg_config_dict = {
     },
 
     'sklearn.linear_model.RidgeCV': {
-        ''
+       
     },
-
-
-
-
 
 
     # Preprocesssors
