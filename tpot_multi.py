@@ -3,8 +3,8 @@ import numpy as np
 # Check the TPOT documentation for information on the structure of config dicts
 
 mul_reg_config_dict = {
-    
-    #regressors need not wrappers
+
+ #regressors need not wrappers
     'sklearn.linear_model.MultiTaskElasticNetCV': {
         'l1_ratio': np.arange(0.0, 1.01, 0.05),
         'tol': [1e-5, 1e-4, 1e-3, 1e-2, 1e-1]
@@ -130,3 +130,4 @@ mul_reg_config_dict = {
     }
 
 }
+
