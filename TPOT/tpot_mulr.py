@@ -5,6 +5,7 @@ import numpy as np
 mul_reg_config_dict = {
     
     #regressors need to be wrapped by multioutput
+<<<<<<< HEAD
     'sklearn.multioutput.RegressorChain': {
         'estimator': {
             'xgboost.XGBRegressor': {
@@ -14,10 +15,12 @@ mul_reg_config_dict = {
             }
         }
     },
+=======
+>>>>>>> small batch of data for TPOT
 
     'sklearn.ensemble.RandomForestRegressor': {
         'n_estimators': [100],
-        'max_features': np.arange(0.05, 1.01, 0.05),
+        'max_features': np.arange(0.03, 1.01, 0.03),
         'min_samples_split': range(2, 21),
         'min_samples_leaf': range(1, 21),
         'bootstrap': [True, False]

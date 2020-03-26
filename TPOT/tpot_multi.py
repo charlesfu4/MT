@@ -5,19 +5,19 @@ import numpy as np
 mul_reg_config_dict = {
 
  #regressors need not wrappers
-    'sklearn.linear_model.MultiTaskElasticNetCV': {
-        'l1_ratio': np.arange(0.0, 1.01, 0.05),
-        'tol': [1e-5, 1e-4, 1e-3, 1e-2, 1e-1]
-    },
 
-
-    'sklearn.ensemble.ExtraTreesRegressor': {
-        'n_estimators': [100],
-        'max_features': np.arange(0.05, 1.01, 0.05),
-        'min_samples_split': range(2, 21),
-        'min_samples_leaf': range(1, 21),
-        'bootstrap': [True, False]
+    'sklearn.multioutput.MultiOutputRegressor': {
+        'estimator': {
+            'xgboost.XGBRegressor': {
+                'n_estimators': [100],
+                'max_depth': range(1, 15),
+                'learning_rate': [1e-3, 5e-3, 1e-2, 5e-2, 1e-1, 0.5, 1.],
+                'subsample': np.arange(0.05, 1.01, 0.2)
+            }    
+        
+        }
     },
+ 
 
 
     'sklearn.tree.DecisionTreeRegressor': {
