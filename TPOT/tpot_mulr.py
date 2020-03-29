@@ -6,14 +6,13 @@ mul_reg_config_dict = {
  #regressors need not wrappers
 
  
-    'sklearn.ensemble.RandomForestRegressor': {
+    'sklearn.ensemble.ExtraTreesRegressor': {
         'n_estimators': [100],
         'max_features': np.arange(0.03, 1.01, 0.03),
         'min_samples_split': range(2, 21),
         'min_samples_leaf': range(1, 21),
         'bootstrap': [True, False]
     },
-
 
 
     # Preprocesssors

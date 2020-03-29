@@ -16,8 +16,6 @@ mul_reg_config_dict = {
         
         }
     },
- 
-
 
     'sklearn.tree.DecisionTreeRegressor': {
         'max_depth': range(1, 11),
@@ -33,9 +31,6 @@ mul_reg_config_dict = {
         'bootstrap': [True, False]
     },
 
-    'sklearn.linear_model.RidgeCV': {
-       
-    },
 
 
     # Preprocesssors
