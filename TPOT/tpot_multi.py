@@ -1,5 +1,4 @@
 import numpy as np
-
 # Check the TPOT documentation for information on the structure of config dicts
 
 mul_reg_config_dict = {

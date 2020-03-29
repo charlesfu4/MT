@@ -4,29 +4,37 @@ Applying AutoML on forecasting energy profiles.
 
 ## Dataset
 
-- Reference: [Smart meters in London](https://www.kaggle.com/jeanmidev/smart-meters-in-london)
+- [Smart meters in London](https://www.kaggle.com/jeanmidev/smart-meters-in-london)
+- [Elia grid load](https://www.elia.be/en/grid-data/load-and-load-forecasts)
 
-## Environment setup
+## AutoML libraries
 
 - [TPOT](https://epistasislab.github.io/tpot/installing/)
 - [Autosklearn](https://automl.github.io/auto-sklearn/master/installation.html)
-- NAS: Neural Network method, has yet to decide.
+- [H2O.ai](https://www.h2o.ai/)
 
 ## Training pipeline
 
-1. Data cleaning and merging among household electricy consumption and weather details
+- Request local weather data from [Darksky API](https://darksky.net/dev)
 
-2. Construct costomized dictionary for multi-output regression
+- Data cleaning and concatenation of household electricy consumption and weather data
+### TPOT
 
-3. Train your model:
+1. Costomize your configuration of algorithm searching by modifying`tpot_multi.py`.
+
+2. Train your model:
 ```
 from tpot import TPOTRegressor
 import tpot_multi
 tpot_reg = TPOTRegressor(config_dict = tpot_multi)
 tpot_reg.fit(train_X, train_y)
 ```
-
-Costomize your configuration of algorithm searching by modifying`tpot_multi.py`.
 For more detail, see [Customizing TPOT](https://epistasislab.github.io/tpot/using/#customizing-tpots-operators-and-parameters)
 
+### Autosklearn
 
+- Not supporting multioutput regression(working on it)
+
+### H2O
+
+- Not supporting multioutput regression
