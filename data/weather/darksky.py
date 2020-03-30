@@ -8,7 +8,7 @@ import json
 
 class weather_request:
     
-    def __init__(self, lat, long, t_start, n_days, timezone):
+    def __init__(self, lat, long, t_start, n_days, timezone, key):
         self.lat = lat
         self.long = long
         self.n_days = n_days
@@ -16,6 +16,7 @@ class weather_request:
         self.requests_list = []
         self.json_objs = []
         self.timezone = timezone
+        self.key = key
         
         if(isinstance(t_start, str)):
             datetime_object = datetime.strptime(t_start, "%Y-%m-%d %H:%M")
@@ -28,8 +29,8 @@ class weather_request:
         
     def request(self):
         for i in range(self.n_days):
-            req = requests.get("https://api.darksky.net/forecast/0f38ea28982740a1d8ee2d75e07660a6/{},{},{}?units=si"
-                                   .format(self.lat, self.long, self.t_start + i*self.daysecond))
+            req = requests.get("https://api.darksky.net/forecast/{}/{},{},{}?units=si"
+                                   .format(self.key, self.lat, self.long, self.t_start + i*self.daysecond))
             self.requests_list.append(req)
         
     def get_pandas(self):
@@ -48,5 +49,8 @@ class weather_request:
             jspd['time'] = jspd['time'].apply(lambda x:datetime.replace(x,tzinfo=None))
             jspd.set_index(jspd['time'], inplace = True)
             jspd.drop(columns = ['time'], inplace = True)
+            # get the max occurance of year as name of csv
+            lst = [year for year in jspd.index.year]
+            jspd.to_csv("weather_{}.csv".format(max(lst, key = lst.count)), index = True)
             return jspd
         return 
