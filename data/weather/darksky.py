@@ -51,6 +51,6 @@ class weather_request:
             jspd.drop(columns = ['time'], inplace = True)
             # get the max occurance of year as name of csv
             lst = [year for year in jspd.index.year]
-            jspd.to_csv("weather_{}.csv".format(max(lst, key = lst.count)), index = True)
+            jspd.to_csv("weather_{}_{}_{}.csv".format(max(lst, key = lst.count), self.lat ,self.long), index = True)
             return jspd
         return 
