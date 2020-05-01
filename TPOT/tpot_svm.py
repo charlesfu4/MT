@@ -7,34 +7,6 @@ mul_reg_config_dict = {
 
 
 
-    'sklearn.ensemble.ExtraTreesRegressor': {
-        'n_estimators': [100],
-        'max_features': np.arange(0.05, 1.01, 0.05),
-        'min_samples_split': range(2, 21),
-        'min_samples_leaf': range(1, 21),
-        'bootstrap': [True, False]
-    }, 
-    'sklearn.neighbors.KNeighborsRegressor': {
-        'n_neighbors': range(1, 101),
-        'weights': ["uniform", "distance"],
-        'p': [1, 2]
-    },
-    'sklearn.ensemble.AdaBoostRegressor': {
-        'n_estimators': [100],
-        'learning_rate': [1e-3, 1e-2, 1e-1, 0.5, 1.],
-        'loss': ["linear", "square", "exponential"]
-    },
-     
-    
-    'sklearn.ensemble.HistGradientBoostingRegressor': {
-       'loss': ["least_squares"],
-       'learning_rate': [1e-3, 1e-2, 1e-1, 0.5, 1.],
-       'max_depth': range(1, 11),
-       'min_samples_leaf': range(1, 21),
-       'l2_regularization': [0, 0.01, 0.1, 0.5, 1.],
-       'max_bins':[50,80,120,150,180,210,255],
-       'validation_fraction':[0.1, 0.2, 0.3]
-    },
     'sklearn.svm.LinearSVR': {
         'loss': ["epsilon_insensitive", "squared_epsilon_insensitive"],
         'dual': [True, False],
