@@ -3,9 +3,56 @@ import pandas as pd
 import numpy as np
 from pandas import datetime
 from matplotlib import pyplot as plt
+from sklearn.preprocessing import PowerTransformer
+from sklearn.preprocessing import QuantileTransformer
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import r2_score
+
+## Distribution transformation
+def power_trans(df):
+    pt = PowerTransformer(method = "yeo-johnson")
+    pt.fit(df)
+    df_trans = pd.DataFrame(pt.transform(df), columns=train.columns[:])
+    return df_trans
+
+
+def quantile_trans(df, n):
+    rng = np.random.RandomState(304)
+    qf = QuantileTransformer(n_quantiles=n, output_distribution='normal',random_state=rng)
+    qt.fit(df)
+    df_trans = pd.DataFrame(qt.transform(df), columns=train.columns)
+    return df_trans
+
+## confidence interval plot of n's prediction
+def plot_conf(test_y, ypred_t, n, ci_term):
+    # confidence interval
+    if(ci_term == 1.96):
+        alpha = 5
+    elif(ci_term == 1.645):
+        alpha = 10
+
+    mean, err = ci_construct((ypred_t - test_y), ci_term)
+    ypred_t_ub = ypred_t + err + mean
+    ypred_t_lb = ypred_t - err +mean
+    # plot
+    fig = plt.figure(figsize=(16,7))
+    font = {'family' : 'Lucida Grande',
+            'weight' : 'bold',
+            'size'   : 15}
+    plt.rc('font', **font)
+    plt.style.use('seaborn')
+    plt.plot(ypred_t[n, :].reshape(-1,1), 'gx-',label='Prediction')
+    plt.plot(ypred_t_ub[n, :].reshape(-1,1), 'g--', label='{} % upper bond'.format(100-alpha*0.5))
+    plt.plot(ypred_t_lb[n, :].reshape(-1,1), 'g--', label='{} % lower bond'.format(alpha*0.5))
+    plt.plot(test_y.iloc[n, :].to_numpy().reshape(-1,1), 'ro', label='Ground truth')
+    #plt.fill(np.concatenate([xx, xx[::-1]]),
+    #         np.concatenate([y_upper, y_lower[::-1]]),
+    #         alpha=.5, fc='b', ec='None', label='90% prediction interval')
+    plt.xlabel('hours', **font)
+    plt.ylabel('KWh', **font)
+    plt.legend(loc='upper left', fontsize = 15)
+    plt.show()
 
 ## convert one to multiple series
 def lag_ahead_series(data, n_in=1, n_out=1, n_vars = 1,dropnan=True):
@@ -122,8 +169,8 @@ def extract_dmhq(df):
     return df
 
 ## feature/ target construction fucntion with lag variable
-def feature_target_construct(df, load_lag, target_ahead, temp_lag, tskip = 0, wd_on = False, d_on = False, m_on = False, h_on = False, q_on = False):
-    tempcols = ['temperature']
+def feature_target_construct(df, load_lag, target_ahead, temp_lag, f_picked, tskip = 0, wd_on = False, d_on = False, m_on = False, h_on = False, q_on = False):
+    tempcols = f_picked 
     load = df['energy']
     f_temp = pd.DataFrame()
     
