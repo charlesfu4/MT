@@ -34,9 +34,9 @@ def plot_conf_dynamic(predicted_error, test_y, ypred_t, n, ci_term):
     elif(ci_term == 1.28):
         alpha = 20
 
-    mean, std = ci_construct(predicted_error, ci_term)
-    ypred_t_ub = ypred_t + mean + std 
-    ypred_t_lb = ypred_t + mean - std 
+    std = np.sqrt(predicted_error)
+    ypred_t_ub = ypred_t + ci_term*std 
+    ypred_t_lb = ypred_t - ci_term*std 
     # plot
     fig = plt.figure(figsize=(16,7))
     font = {'family' : 'Lucida Grande',
@@ -56,7 +56,7 @@ def plot_conf_dynamic(predicted_error, test_y, ypred_t, n, ci_term):
     plt.legend(loc='upper left', fontsize = 15)
     plt.show()
 
-def plot_conf_static(test_y, ypred_t, n, ci_term):
+def plot_conf_static(val_y, val_y_pred, test_y, test_y_pred, n, ci_term):
     # confidence interval
     if(ci_term == 1.96):
         alpha = 5
@@ -65,9 +65,9 @@ def plot_conf_static(test_y, ypred_t, n, ci_term):
     elif(ci_term == 1.28):
         alpha = 20
         
-    mean, std = ci_construct((test_y.to_numpy() - ypred_t), ci_term)
-    ypred_t_ub = ypred_t + mean + std 
-    ypred_t_lb = ypred_t + mean - std 
+    std = np.std(val_y - val_y_pred).to_numpy() 
+    ypred_t_ub = test_y_pred  + ci_term*std 
+    ypred_t_lb = test_y_pred  - ci_term*std 
     # plot
     fig = plt.figure(figsize=(16,7))
     font = {'family' : 'Lucida Grande',
@@ -75,7 +75,7 @@ def plot_conf_static(test_y, ypred_t, n, ci_term):
             'size'   : 15}
     plt.rc('font', **font)
     plt.style.use('seaborn')
-    plt.plot(ypred_t[n, :].reshape(-1,1), 'gx-',label='Prediction')
+    plt.plot(test_y_pred[n, :].reshape(-1,1), 'gx-',label='Prediction')
     plt.plot(ypred_t_ub[n, :].reshape(-1,1), 'g--', label='{} % upper bond'.format(100-alpha*0.5))
     plt.plot(ypred_t_lb[n, :].reshape(-1,1), 'g--', label='{} % lower bond'.format(alpha*0.5))
     plt.plot(test_y.iloc[n, :].to_numpy().reshape(-1,1), 'ro', label='Ground truth')
