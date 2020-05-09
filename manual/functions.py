@@ -277,7 +277,7 @@ def feature_target_construct(df, load_lag, target_ahead, temp_lag, temp_ahead, f
     ## hour one hot on
     if h_on:
         # month one hot encoding
-        hour = pd.get_dummies(df['hour'])
+        hour = df['hour']
         # alignment
         hour , f = hour.align(f, 'inner', axis = 0)
         f = pd.concat([hour, f], axis = 1)
@@ -285,7 +285,7 @@ def feature_target_construct(df, load_lag, target_ahead, temp_lag, temp_ahead, f
     ## quarter one hot on
     if q_on:
         # month one hot encoding
-        minute = pd.get_dummies(df['minute'])
+        minute = df['minute']
         # alignment
         minute , f = minute.align(f, 'inner', axis = 0)
         f = pd.concat([minute, f], axis = 1)
@@ -293,7 +293,7 @@ def feature_target_construct(df, load_lag, target_ahead, temp_lag, temp_ahead, f
     ## weekday one hot on
     if wd_on:
         # weekday one hot encoding
-        weekday = pd.get_dummies(df['wd'])
+        weekday = df['wd']
         # alignment
         weekday , f = weekday.align(f, 'inner', axis = 0)
         f = pd.concat([weekday, f], axis = 1)
@@ -301,7 +301,7 @@ def feature_target_construct(df, load_lag, target_ahead, temp_lag, temp_ahead, f
     ## day one hot on
     if d_on:
         # day one hot encoding
-        day = pd.get_dummies(df['day'])
+        day = df['day']
         # alignment
         day , f = day.align(f, 'inner', axis = 0)
         f = pd.concat([day, f], axis = 1)
@@ -309,7 +309,7 @@ def feature_target_construct(df, load_lag, target_ahead, temp_lag, temp_ahead, f
     ## month one hot on
     if m_on:
         # month one hot encoding
-        month = pd.get_dummies(df['month'])
+        month = df['month']
         # alignment
         month , f = month.align(f, 'inner', axis = 0)
         f = pd.concat([month, f], axis = 1)
