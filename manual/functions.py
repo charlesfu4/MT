@@ -97,6 +97,71 @@ def distri_plot(df):
     ## plot     
     plt.tight_layout()
 
+## verfication of CI
+
+def verf_ci_dynamic(ci_term, std, ttest, ypred_t):
+    if(ci_term == 1.96):
+        alpha = 0.05
+    elif(ci_term == 1.645):
+        alpha = 0.10
+    elif(ci_term == 1.28):
+        alpha = 0.20
+
+    precentage_list = []
+    err_count = 0
+
+    for i in range(ttest.shape[0]):
+        count = 0
+        for j in range(ttest.shape[1]):
+            if ttest.iloc[i,j] >=  (ypred_t[i,j] + ci_term*std[j]) or ttest.iloc[i,j] <= (ypred_t[i,j] - ci_term*std[j]):
+                count += 1
+        if count/ttest.shape[1] > alpha:
+            err_count += 1
+        precentage_list.append(count/ttest.shape[1])
+
+    print("out_of_bound_pecentage", err_count/ttest.shape[0])
+    fig = plt.figure(figsize = (16,7))
+    font = {'family' : 'Lucida Grande',
+            'weight' : 'bold',
+            'size'   : 15}
+    plt.rc('font', **font)
+    plt.style.use('seaborn')
+    plt.xlabel('Number of testing sets', **font)
+    plt.ylabel('Out_of_bound_error', **font)
+    plt.plot(precentage_list)
+
+def verf_ci_static(ci_term, val_y, ypred, ttest, ypred_t):
+    if(ci_term == 1.96):
+        alpha = 0.05
+    elif(ci_term == 1.645):
+        alpha = 0.10
+    elif(ci_term == 1.28):
+        alpha = 0.20
+
+    std = np.std(val_y - ypred).to_numpy()
+    precentage_list = []
+    err_count = 0
+
+    for i in range(ttest.shape[0]):
+        count = 0
+        for j in range(ttest.shape[1]):
+            if ttest.iloc[i,j] >=  (ypred_t[i,j] + ci_term*std[j]) or ttest.iloc[i,j] <= (ypred_t[i,j] - ci_term*std[j]):
+                count += 1
+        if count/ttest.shape[1] > alpha:
+            err_count += 1
+        precentage_list.append(count/ttest.shape[1])
+
+    print("out_of_bound_pecentage", err_count/ttest.shape[0])
+    fig = plt.figure(figsize = (16,7))
+    font = {'family' : 'Lucida Grande',
+            'weight' : 'bold',
+            'size'   : 15}
+    plt.rc('font', **font)
+    plt.style.use('seaborn')
+    plt.xlabel('Number of testing sets', **font)
+    plt.ylabel('Out_of_bound_error', **font)
+    plt.plot(precentage_list)
+
 ## Scatter plot function
 def scatter_plot(df):
     num_cols = df.shape[1]
@@ -276,3 +341,4 @@ def ci_construct(error, n):
         std_list.append(np.std(error[:, i])*n)
         mean_list.append(np.mean(error[:, i]))
     return  mean_list, std_list
+
