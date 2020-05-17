@@ -24,67 +24,6 @@ def quantile_trans(df, n):
     df_trans = pd.DataFrame(qt.transform(df), columns=train.columns)
     return df_trans
 
-## confidence interval plot for forest estimator
-def ci_forest(n, ci_term, estimator, features, targets):
-    predictions = []
-    for est in estimator.estimators_:
-        predictions.append(est.predict(features.iloc[n,:].to_numpy().reshape(1,-1)))
-    predictions = np.array(predictions)
-    prediction_list = predictions.reshape(predictions.shape[0], predictions.shape[2])
-    fig = plt.figure(figsize=(16,7))
-    plt.plot(np.quantile(prediction_list, 0.5, axis = 0), 'gx-', label='Prediction')
-    plt.plot(np.quantile(prediction_list, ci_term, axis = 0), 'g--', label='{} % lower bond'.format(ci_term*100))
-    plt.plot(np.quantile(prediction_list, 1-ci_term, axis = 0), 'g--', label='{} % upper bond'.format(100-ci_term*100))
-    plt.plot(targets.iloc[n,:].to_numpy(), 'ro', label='Ground truth')
-    plt.xlabel('hours', **font)
-    plt.ylabel('KWh', **font)
-    plt.legend(loc='upper left', fontsize = 15)
-    plt.show()
-
-## confidence interval check function for forest estimator
-def verf_ci_qunatile_forest(quantile, estimator, ttest, pftest, n_samples):
-
-    q_ub = []
-    q_lb = []
-    q_m = []
-    for idx in range(n_samples):
-        predictions = []
-        for est in estimator.estimators_:
-            predictions.append(est.predict(pftest.iloc[idx,:].to_numpy().reshape(1,-1)))
-        predictions = np.array(predictions)
-        prediction_list = predictions.reshape(predictions.shape[0], predictions.shape[2])
-        q_ub.append(np.quantile(prediction_list, 1 - quantile, axis = 0))
-        q_lb.append(np.quantile(prediction_list, quantile, axis = 0))
-        q_m.append(np.quantile(prediction_list, 0.5, axis = 0))
-
-    q_ub = np.array(q_ub)
-    q_lb = np.array(q_lb)
-    q_m = np.array(q_m)
-
-    precentage_list = []
-    err_count = 0
-    for i in range(n_samples):
-        count = 0
-        for j in range(ttest.shape[1]):
-            if ttest.iloc[i,j] >=  q_ub[i,j] or ttest.iloc[i,j] <= q_lb[i,j]:
-                count += 1
-        if count/ttest.shape[1] > quantile*2:
-            err_count += 1
-        precentage_list.append(count/ttest.shape[1])
-
-    print("out_of_bound_pecentage", err_count/n_samples)
-    fig = plt.figure(figsize = (16,7))
-    font = {'family' : 'Lucida Grande',
-            'weight' : 'bold',
-            'size'   : 15}
-    plt.rc('font', **font)
-    plt.style.use('seaborn')
-    plt.xlabel('Number of testing sets', **font)
-    plt.ylabel('Out_of_bound_error', **font)
-    plt.plot(precentage_list)
-
-
-
 ## confidence interval plot of n's prediction
 def plot_conf_dynamic(predicted_error, test_y, ypred_t, n, ci_term):
     # confidence interval
@@ -394,4 +333,12 @@ def feature_target_construct(df, load_lag, target_ahead, temp_lag, temp_ahead, f
     f, t = f.align(t, 'inner', axis = 0)
     
     return f, t
+## ci construction for err
+def ci_construct(error, n):
+    std_list = []
+    mean_list = []
+    for i in range(error.shape[1]):
+        std_list.append(np.std(error[:, i])*n)
+        mean_list.append(np.mean(error[:, i]))
+    return  mean_list, std_list
 
