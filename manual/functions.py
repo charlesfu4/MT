@@ -145,9 +145,9 @@ def verf_ci_static(ci_term, val_y, ypred, ttest, ypred_t):
     for i in range(ttest.shape[0]):
         count = 0
         for j in range(ttest.shape[1]):
-            if ttest.iloc[i,j] >=  (ypred_t[i,j] + ci_term*std[j]) or ttest.iloc[i,j] <= (ypred_t[i,j] - ci_term*std[j]):
+            if ttest.iloc[i,j] <=  (ypred_t[i,j] + ci_term*std[j]) and ttest.iloc[i,j] >= (ypred_t[i,j] - ci_term*std[j]):
                 count += 1
-        if count/ttest.shape[1] > alpha:
+        if count/ttest.shape[1] < (1- alpha):
             err_count += 1
         precentage_list.append(count/ttest.shape[1])
 
@@ -213,6 +213,65 @@ def lag_ahead_series(data, n_in=1, n_out=1, n_vars = 1, dropnan=True, nskip = 0)
         agg.dropna(inplace=True)
     return agg
 
+## convert one to multiple series
+def tfla_series(data, n_in=1, n_out=1, n_vars = 1, dropnan=True, nskip = 0):
+    df = pd.DataFrame(data)
+    cols, names = list(), list()
+    if n_in + n_out == 0:
+        return
+    # skipped sequences (t + nskip, ... t + n)
+    if nskip != 0:
+        # input sequence (t-n, ..., t-1) 
+        for j in range(n_vars):
+            for i in range(n_in, 0, -nskip):
+                cols.append(df.iloc[:,j].shift(i))
+                names.append('{}'.format(-i+n_in))
+        # forecast sequence (t+1, ..., t+n)
+        for j in range(n_vars):
+            for i in np.arange(0, n_out, nskip):
+                cols.append(df.iloc[:,j].shift(-i))
+                names += [('{}{}(t+{})'.format(df.columns[0], j+1, i))]
+    # regular sequences
+    else:
+        # input sequence (t-n, ... t-1)
+        for j in range(n_vars):
+            for i in range(n_in, 0, -1):
+                cols.append(df.iloc[:,j].shift(i))
+                names.append('{}'.format(-i+n_in))
+
+        # forecast sequence (t+1, ... t+n)
+        for j in range(n_vars):
+            for i in range(0, n_out):
+                cols.append(df.iloc[:,j].shift(-i))
+                names += [('{}{}(t+{})'.format(df.columns[0], j+1, i))]
+    # put it all together
+    agg = pd.concat(cols, axis=1)
+    agg.columns = names
+    
+    #drop rows with NaN values
+    if dropnan:
+        agg.dropna(inplace=True)
+    return agg
+
+def tf_construct(df, target_name, load_lag, target_ahead):
+    load = df['%s'% target_name]
+    ## load lag series
+    f = tfla_series(load,
+                  n_in = load_lag,
+                  n_out = 0,
+                  n_vars = 1,
+                  dropnan = True)
+    ## target part
+    t = tfla_series(load,
+                  n_in = 0,
+                  n_out = target_ahead,
+                  n_vars = 1,
+                  dropnan = True)
+    # alignment of feature and target
+    f, t = f.align(t, 'inner', axis = 0)
+    
+    return f, t
+
 ## plot dataframe creation
 def plot_df(arr, name):
     plot_df = pd.DataFrame()
@@ -232,15 +291,16 @@ def extract_dmhq(df):
     df['date'] = df.index.astype('datetime64[ns]')
     df['month'] = df['date'].dt.month
     df['day'] = df['date'].dt.day
+    df['wd'] = df['date'].dt.dayofweek
     df['hour'] = df['date'].dt.hour
     df['minute'] = df['date'].dt.minute
     df.drop(['date'], axis = 1, inplace = True)
     return df
 
 ## feature/ target construction fucntion with lag variable
-def feature_target_construct(df, load_lag, target_ahead, temp_lag, temp_ahead, f_picked, tskip = 0, wd_on = False, d_on = False, m_on = False, h_on = False, q_on = False):
+def feature_target_construct(df, target_name,load_lag, target_ahead, temp_lag, temp_ahead, f_picked, tskip = 0, wd_on = False, d_on = False, m_on = False, h_on = False, q_on = False):
     tempcols = f_picked 
-    load = df['energy']
+    load = df['%s'% target_name]
     f_temp = pd.DataFrame()
     
     ## temp ahead series
@@ -277,7 +337,7 @@ def feature_target_construct(df, load_lag, target_ahead, temp_lag, temp_ahead, f
     ## hour one hot on
     if h_on:
         # month one hot encoding
-        hour = pd.get_dummies(df['hour'])
+        hour = df['hour']
         # alignment
         hour , f = hour.align(f, 'inner', axis = 0)
         f = pd.concat([hour, f], axis = 1)
@@ -285,7 +345,7 @@ def feature_target_construct(df, load_lag, target_ahead, temp_lag, temp_ahead, f
     ## quarter one hot on
     if q_on:
         # month one hot encoding
-        minute = pd.get_dummies(df['minute'])
+        minute = df['minute']
         # alignment
         minute , f = minute.align(f, 'inner', axis = 0)
         f = pd.concat([minute, f], axis = 1)
@@ -293,7 +353,7 @@ def feature_target_construct(df, load_lag, target_ahead, temp_lag, temp_ahead, f
     ## weekday one hot on
     if wd_on:
         # weekday one hot encoding
-        weekday = pd.get_dummies(df['wd'])
+        weekday = df['wd']
         # alignment
         weekday , f = weekday.align(f, 'inner', axis = 0)
         f = pd.concat([weekday, f], axis = 1)
@@ -301,7 +361,7 @@ def feature_target_construct(df, load_lag, target_ahead, temp_lag, temp_ahead, f
     ## day one hot on
     if d_on:
         # day one hot encoding
-        day = pd.get_dummies(df['day'])
+        day = df['day']
         # alignment
         day , f = day.align(f, 'inner', axis = 0)
         f = pd.concat([day, f], axis = 1)
@@ -309,7 +369,7 @@ def feature_target_construct(df, load_lag, target_ahead, temp_lag, temp_ahead, f
     ## month one hot on
     if m_on:
         # month one hot encoding
-        month = pd.get_dummies(df['month'])
+        month = df['month']
         # alignment
         month , f = month.align(f, 'inner', axis = 0)
         f = pd.concat([month, f], axis = 1)
