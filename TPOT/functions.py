@@ -24,67 +24,6 @@ def quantile_trans(df, n):
     df_trans = pd.DataFrame(qt.transform(df), columns=train.columns)
     return df_trans
 
-## confidence interval plot for forest estimator
-def ci_forest(n, ci_term, estimator, features, targets):
-    predictions = []
-    for est in estimator.estimators_:
-        predictions.append(est.predict(features.iloc[n,:].to_numpy().reshape(1,-1)))
-    predictions = np.array(predictions)
-    prediction_list = predictions.reshape(predictions.shape[0], predictions.shape[2])
-    fig = plt.figure(figsize=(16,7))
-    plt.plot(np.quantile(prediction_list, 0.5, axis = 0), 'gx-', label='Prediction')
-    plt.plot(np.quantile(prediction_list, ci_term, axis = 0), 'g--', label='{} % lower bond'.format(ci_term*100))
-    plt.plot(np.quantile(prediction_list, 1-ci_term, axis = 0), 'g--', label='{} % upper bond'.format(100-ci_term*100))
-    plt.plot(targets.iloc[n,:].to_numpy(), 'ro', label='Ground truth')
-    plt.xlabel('hours', **font)
-    plt.ylabel('KWh', **font)
-    plt.legend(loc='upper left', fontsize = 15)
-    plt.show()
-
-## confidence interval check function for forest estimator
-def verf_ci_qunatile_forest(quantile, estimator, ttest, pftest, n_samples):
-
-    q_ub = []
-    q_lb = []
-    q_m = []
-    for idx in range(n_samples):
-        predictions = []
-        for est in estimator.estimators_:
-            predictions.append(est.predict(pftest.iloc[idx,:].to_numpy().reshape(1,-1)))
-        predictions = np.array(predictions)
-        prediction_list = predictions.reshape(predictions.shape[0], predictions.shape[2])
-        q_ub.append(np.quantile(prediction_list, 1 - quantile, axis = 0))
-        q_lb.append(np.quantile(prediction_list, quantile, axis = 0))
-        q_m.append(np.quantile(prediction_list, 0.5, axis = 0))
-
-    q_ub = np.array(q_ub)
-    q_lb = np.array(q_lb)
-    q_m = np.array(q_m)
-
-    precentage_list = []
-    err_count = 0
-    for i in range(n_samples):
-        count = 0
-        for j in range(ttest.shape[1]):
-            if ttest.iloc[i,j] >=  q_ub[i,j] or ttest.iloc[i,j] <= q_lb[i,j]:
-                count += 1
-        if count/ttest.shape[1] > quantile*2:
-            err_count += 1
-        precentage_list.append(count/ttest.shape[1])
-
-    print("out_of_bound_pecentage", err_count/n_samples)
-    fig = plt.figure(figsize = (16,7))
-    font = {'family' : 'Lucida Grande',
-            'weight' : 'bold',
-            'size'   : 15}
-    plt.rc('font', **font)
-    plt.style.use('seaborn')
-    plt.xlabel('Number of testing sets', **font)
-    plt.ylabel('Out_of_bound_error', **font)
-    plt.plot(precentage_list)
-
-
-
 ## confidence interval plot of n's prediction
 def plot_conf_dynamic(predicted_error, test_y, ypred_t, n, ci_term):
     # confidence interval
@@ -206,9 +145,9 @@ def verf_ci_static(ci_term, val_y, ypred, ttest, ypred_t):
     for i in range(ttest.shape[0]):
         count = 0
         for j in range(ttest.shape[1]):
-            if ttest.iloc[i,j] <=  (ypred_t[i,j] + ci_term*std[j]) and ttest.iloc[i,j] >= (ypred_t[i,j] - ci_term*std[j]):
+            if ttest.iloc[i,j] >=  (ypred_t[i,j] + ci_term*std[j]) or ttest.iloc[i,j] <= (ypred_t[i,j] - ci_term*std[j]):
                 count += 1
-        if count/ttest.shape[1] < (1- alpha):
+        if count/ttest.shape[1] > alpha:
             err_count += 1
         precentage_list.append(count/ttest.shape[1])
 
@@ -274,65 +213,6 @@ def lag_ahead_series(data, n_in=1, n_out=1, n_vars = 1, dropnan=True, nskip = 0)
         agg.dropna(inplace=True)
     return agg
 
-## convert one to multiple series
-def tfla_series(data, n_in=1, n_out=1, n_vars = 1, dropnan=True, nskip = 0):
-    df = pd.DataFrame(data)
-    cols, names = list(), list()
-    if n_in + n_out == 0:
-        return
-    # skipped sequences (t + nskip, ... t + n)
-    if nskip != 0:
-        # input sequence (t-n, ..., t-1) 
-        for j in range(n_vars):
-            for i in range(n_in, 0, -nskip):
-                cols.append(df.iloc[:,j].shift(i))
-                names.append('{}'.format(-i+n_in))
-        # forecast sequence (t+1, ..., t+n)
-        for j in range(n_vars):
-            for i in np.arange(0, n_out, nskip):
-                cols.append(df.iloc[:,j].shift(-i))
-                names += [('{}{}(t+{})'.format(df.columns[0], j+1, i))]
-    # regular sequences
-    else:
-        # input sequence (t-n, ... t-1)
-        for j in range(n_vars):
-            for i in range(n_in, 0, -1):
-                cols.append(df.iloc[:,j].shift(i))
-                names.append('{}'.format(-i+n_in))
-
-        # forecast sequence (t+1, ... t+n)
-        for j in range(n_vars):
-            for i in range(0, n_out):
-                cols.append(df.iloc[:,j].shift(-i))
-                names += [('{}{}(t+{})'.format(df.columns[0], j+1, i))]
-    # put it all together
-    agg = pd.concat(cols, axis=1)
-    agg.columns = names
-    
-    #drop rows with NaN values
-    if dropnan:
-        agg.dropna(inplace=True)
-    return agg
-
-def tf_construct(df, target_name, load_lag, target_ahead):
-    load = df['%s'% target_name]
-    ## load lag series
-    f = tfla_series(load,
-                  n_in = load_lag,
-                  n_out = 0,
-                  n_vars = 1,
-                  dropnan = True)
-    ## target part
-    t = tfla_series(load,
-                  n_in = 0,
-                  n_out = target_ahead,
-                  n_vars = 1,
-                  dropnan = True)
-    # alignment of feature and target
-    f, t = f.align(t, 'inner', axis = 0)
-    
-    return f, t
-
 ## plot dataframe creation
 def plot_df(arr, name):
     plot_df = pd.DataFrame()
@@ -352,16 +232,15 @@ def extract_dmhq(df):
     df['date'] = df.index.astype('datetime64[ns]')
     df['month'] = df['date'].dt.month
     df['day'] = df['date'].dt.day
-    df['wd'] = df['date'].dt.dayofweek
     df['hour'] = df['date'].dt.hour
     df['minute'] = df['date'].dt.minute
     df.drop(['date'], axis = 1, inplace = True)
     return df
 
 ## feature/ target construction fucntion with lag variable
-def feature_target_construct(df, target_name,load_lag, target_ahead, temp_lag, temp_ahead, f_picked, tskip = 0, wd_on = False, d_on = False, m_on = False, h_on = False, q_on = False):
+def feature_target_construct(df, load_lag, target_ahead, temp_lag, temp_ahead, f_picked, tskip = 0, wd_on = False, d_on = False, m_on = False, h_on = False, q_on = False):
     tempcols = f_picked 
-    load = df['%s'% target_name]
+    load = df['energy']
     f_temp = pd.DataFrame()
     
     ## temp ahead series
@@ -454,4 +333,12 @@ def feature_target_construct(df, target_name,load_lag, target_ahead, temp_lag, t
     f, t = f.align(t, 'inner', axis = 0)
     
     return f, t
+## ci construction for err
+def ci_construct(error, n):
+    std_list = []
+    mean_list = []
+    for i in range(error.shape[1]):
+        std_list.append(np.std(error[:, i])*n)
+        mean_list.append(np.mean(error[:, i]))
+    return  mean_list, std_list
 
