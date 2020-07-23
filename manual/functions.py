@@ -8,7 +8,46 @@ from sklearn.preprocessing import QuantileTransformer
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import r2_score
+from sklearn.utils import resample
 
+# bootstrapping confidence interval
+def bootstrapping_ci(train_X, train_Y, test_X, estimator, n_bootstraps = 100,  p_samples = 0.5):
+    """
+    Parameters
+    ----------
+    train_X: pd.DataFrame or numpy.array
+        The original features of training set
+        
+    train_Y: pd.DataFrame or numpy.array
+        The original targets of training set
+        
+    test_X: pd.DataFrame or numpy.array
+        The original features of testing set
+        
+    estimator: sklearn.BaseEstimator
+        The estimator to fit and for generating prediction
+    
+    n_bootstraps: int, default = 100
+        The number of resamples taken by bootstrapping
+    
+    p_samples: float, default = 0.5
+        The proportion of random sampling takes from original training data
+        
+    """
+    
+    b_x = []
+    b_y = []
+    prediction_bs = []
+    for _ in range(n_bootstraps):
+        sample_X ,sample_y = resample(train_X, train_Y, n_samples = int(trian_X.shape[0]*p_samples))
+        b_x.append(sample_X)
+    b_y.append(sample_y)
+    """Now fit the estimators and generate different predictions n_bootstraps times"""
+    for i, feature in enumerate(b_x):
+        estimator.fit(feature, b_y[i])
+        prediction_bs.append(estimator.predict(pftest))
+    
+    return prediction_bs
 ## Distribution transformation
 def power_trans(df):
     pt = PowerTransformer(method = "yeo-johnson")
@@ -23,216 +62,6 @@ def quantile_trans(df, n):
     qt.fit(df)
     df_trans = pd.DataFrame(qt.transform(df), columns=train.columns)
     return df_trans
-
-## confidence interval plot for forest estimator
-def ci_forest(n, ci_term, estimator, features, targets):
-    predictions = []
-    for est in estimator.estimators_:
-        predictions.append(est.predict(features.iloc[n,:].to_numpy().reshape(1,-1)))
-    predictions = np.array(predictions)
-    prediction_list = predictions.reshape(predictions.shape[0], predictions.shape[2])
-    fig = plt.figure(figsize=(16,7))
-    plt.plot(np.quantile(prediction_list, 0.5, axis = 0), 'gx-', label='Prediction')
-    plt.plot(np.quantile(prediction_list, ci_term, axis = 0), 'g--', label='{} % lower bond'.format(ci_term*100))
-    plt.plot(np.quantile(prediction_list, 1-ci_term, axis = 0), 'g--', label='{} % upper bond'.format(100-ci_term*100))
-    plt.plot(targets.iloc[n,:].to_numpy(), 'ro', label='Ground truth')
-    plt.xlabel('hours', **font)
-    plt.ylabel('KWh', **font)
-    plt.legend(loc='upper left', fontsize = 15)
-    plt.show()
-
-## confidence interval check function for forest estimator
-def verf_ci_qunatile_forest(quantile, estimator, ttest, pftest, n_samples):
-
-    q_ub = []
-    q_lb = []
-    q_m = []
-    for idx in range(n_samples):
-        predictions = []
-        for est in estimator.estimators_:
-            predictions.append(est.predict(pftest.iloc[idx,:].to_numpy().reshape(1,-1)))
-        predictions = np.array(predictions)
-        prediction_list = predictions.reshape(predictions.shape[0], predictions.shape[2])
-        q_ub.append(np.quantile(prediction_list, 1 - quantile, axis = 0))
-        q_lb.append(np.quantile(prediction_list, quantile, axis = 0))
-        q_m.append(np.quantile(prediction_list, 0.5, axis = 0))
-
-    q_ub = np.array(q_ub)
-    q_lb = np.array(q_lb)
-    q_m = np.array(q_m)
-
-    precentage_list = []
-    err_count = 0
-    for i in range(n_samples):
-        count = 0
-        for j in range(ttest.shape[1]):
-            if ttest.iloc[i,j] >=  q_ub[i,j] or ttest.iloc[i,j] <= q_lb[i,j]:
-                count += 1
-        if count/ttest.shape[1] > quantile*2:
-            err_count += 1
-        precentage_list.append(count/ttest.shape[1])
-
-    print("out_of_bound_pecentage", err_count/n_samples)
-    fig = plt.figure(figsize = (16,7))
-    font = {'family' : 'Lucida Grande',
-            'weight' : 'bold',
-            'size'   : 15}
-    plt.rc('font', **font)
-    plt.style.use('seaborn')
-    plt.xlabel('Number of testing sets', **font)
-    plt.ylabel('Out_of_bound_error', **font)
-    plt.plot(precentage_list)
-
-
-
-## confidence interval plot of n's prediction
-def plot_conf_dynamic(predicted_error, test_y, ypred_t, n, ci_term):
-    # confidence interval
-    if(ci_term == 1.96):
-        alpha = 5
-    elif(ci_term == 1.645):
-        alpha = 10
-    elif(ci_term == 1.28):
-        alpha = 20
-
-    std = np.sqrt(predicted_error)
-    ypred_t_ub = ypred_t + ci_term*std 
-    ypred_t_lb = ypred_t - ci_term*std 
-    # plot
-    fig = plt.figure(figsize=(16,7))
-    font = {'family' : 'Lucida Grande',
-            'weight' : 'bold',
-            'size'   : 15}
-    plt.rc('font', **font)
-    plt.style.use('seaborn')
-    plt.plot(ypred_t[n, :].reshape(-1,1), 'gx-',label='Prediction')
-    plt.plot(ypred_t_ub[n, :].reshape(-1,1), 'g--', label='{} % upper bond'.format(100-alpha*0.5))
-    plt.plot(ypred_t_lb[n, :].reshape(-1,1), 'g--', label='{} % lower bond'.format(alpha*0.5))
-    plt.plot(test_y.iloc[n, :].to_numpy().reshape(-1,1), 'ro', label='Ground truth')
-    #plt.fill(np.concatenate([xx, xx[::-1]]),
-    #         np.concatenate([y_upper, y_lower[::-1]]),
-    #         alpha=.5, fc='b', ec='None', label='90% prediction interval')
-    plt.xlabel('hours', **font)
-    plt.ylabel('KWh', **font)
-    plt.legend(loc='upper left', fontsize = 15)
-    plt.show()
-
-def plot_conf_static(val_y, val_y_pred, test_y, test_y_pred, n, ci_term):
-    # confidence interval
-    if(ci_term == 1.96):
-        alpha = 5
-    elif(ci_term == 1.645):
-        alpha = 10
-    elif(ci_term == 1.28):
-        alpha = 20
-        
-    std = np.std(val_y - val_y_pred).to_numpy() 
-    ypred_t_ub = test_y_pred  + ci_term*std 
-    ypred_t_lb = test_y_pred  - ci_term*std 
-    # plot
-    fig = plt.figure(figsize=(16,7))
-    font = {'family' : 'Lucida Grande',
-            'weight' : 'bold',
-            'size'   : 15}
-    plt.rc('font', **font)
-    plt.style.use('seaborn')
-    plt.plot(test_y_pred[n, :].reshape(-1,1), 'gx-',label='Prediction')
-    plt.plot(ypred_t_ub[n, :].reshape(-1,1), 'g--', label='{} % upper bond'.format(100-alpha*0.5))
-    plt.plot(ypred_t_lb[n, :].reshape(-1,1), 'g--', label='{} % lower bond'.format(alpha*0.5))
-    plt.plot(test_y.iloc[n, :].to_numpy().reshape(-1,1), 'ro', label='Ground truth')
-    #plt.fill(np.concatenate([xx, xx[::-1]]),
-    #         np.concatenate([y_upper, y_lower[::-1]]),
-    #         alpha=.5, fc='b', ec='None', label='90% prediction interval')
-    plt.xlabel('hours', **font)
-    plt.ylabel('KWh', **font)
-    plt.legend(loc='upper left', fontsize = 15)
-    plt.show()
-
-## Distribution plot funciton
-def distri_plot(df):
-    num_cols = df.shape[1]
-    f, axes = plt.subplots(num_cols//3 + 1, 3, figsize=(15, 11), sharex=False)
-    for idx, col_name in enumerate(df.columns, 0): 
-        idx = int(idx)
-        sns.distplot(df[col_name],ax=axes[idx//3,idx%3])  
-    ## plot     
-    plt.tight_layout()
-
-## verfication of CI
-
-def verf_ci_dynamic(ci_term, std, ttest, ypred_t):
-    if(ci_term == 1.96):
-        alpha = 0.05
-    elif(ci_term == 1.645):
-        alpha = 0.10
-    elif(ci_term == 1.28):
-        alpha = 0.20
-
-    precentage_list = []
-    err_count = 0
-
-    for i in range(ttest.shape[0]):
-        count = 0
-        for j in range(ttest.shape[1]):
-            if ttest.iloc[i,j] >=  (ypred_t[i,j] + ci_term*std[j]) or ttest.iloc[i,j] <= (ypred_t[i,j] - ci_term*std[j]):
-                count += 1
-        if count/ttest.shape[1] > alpha:
-            err_count += 1
-        precentage_list.append(count/ttest.shape[1])
-
-    print("out_of_bound_pecentage", err_count/ttest.shape[0])
-    fig = plt.figure(figsize = (16,7))
-    font = {'family' : 'Lucida Grande',
-            'weight' : 'bold',
-            'size'   : 15}
-    plt.rc('font', **font)
-    plt.style.use('seaborn')
-    plt.xlabel('Number of testing sets', **font)
-    plt.ylabel('Out_of_bound_error', **font)
-    plt.plot(precentage_list)
-
-def verf_ci_static(ci_term, val_y, ypred, ttest, ypred_t):
-    if(ci_term == 1.96):
-        alpha = 0.05
-    elif(ci_term == 1.645):
-        alpha = 0.10
-    elif(ci_term == 1.28):
-        alpha = 0.20
-
-    std = np.std(val_y - ypred).to_numpy()
-    precentage_list = []
-    err_count = 0
-
-    for i in range(ttest.shape[0]):
-        count = 0
-        for j in range(ttest.shape[1]):
-            if ttest.iloc[i,j] >=  (ypred_t[i,j] + ci_term*std[j]) or ttest.iloc[i,j] <= (ypred_t[i,j] - ci_term*std[j]):
-                count += 1
-        if count/ttest.shape[1] > alpha:
-            err_count += 1
-        precentage_list.append(count/ttest.shape[1])
-
-    print("out_of_bound_pecentage", err_count/ttest.shape[0])
-    fig = plt.figure(figsize = (16,7))
-    font = {'family' : 'Lucida Grande',
-            'weight' : 'bold',
-            'size'   : 15}
-    plt.rc('font', **font)
-    plt.style.use('seaborn')
-    plt.xlabel('Number of testing sets', **font)
-    plt.ylabel('Out_of_bound_error', **font)
-    plt.plot(precentage_list)
-
-## Scatter plot function
-def scatter_plot(df):
-    num_cols = df.shape[1]
-    f, axes = plt.subplots(num_cols//2 + 1, 2, figsize=(15, 11), sharex=False)
-    for idx, col_name in enumerate(df.columns, 0): 
-        idx = int(idx)
-        sns.scatterplot(x= col_name,y = "energy", data = df, ax=axes[idx//2,idx%2])  
-    ## plot     
-    plt.tight_layout()
-    
 
 ## convert one to multiple series
 def lag_ahead_series(data, n_in=1, n_out=1, n_vars = 1, dropnan=True, nskip = 0):
@@ -274,14 +103,6 @@ def lag_ahead_series(data, n_in=1, n_out=1, n_vars = 1, dropnan=True, nskip = 0)
         agg.dropna(inplace=True)
     return agg
 
-## plot dataframe creation
-def plot_df(arr, name):
-    plot_df = pd.DataFrame()
-    i = 0
-    for row in arr:
-        plot_df.insert(i, "{}".format(name), row, True) 
-        i += 1
-    return plot_df
 
 def get_eval(y, yhat):
     print("MSE: {}".format(mean_squared_error(y,yhat)))
@@ -291,10 +112,12 @@ def get_eval(y, yhat):
 ## extract day and month
 def extract_dmhq(df):
     df['date'] = df.index.astype('datetime64[ns]')
+    df['wd'] = df['date'].dt.dayofweek 
     df['month'] = df['date'].dt.month
     df['day'] = df['date'].dt.day
     df['hour'] = df['date'].dt.hour
     df['minute'] = df['date'].dt.minute
+    df['yd'] = df['date'].dt.dayofyear
     df.drop(['date'], axis = 1, inplace = True)
     return df
 
@@ -394,4 +217,3 @@ def feature_target_construct(df, load_lag, target_ahead, temp_lag, temp_ahead, f
     f, t = f.align(t, 'inner', axis = 0)
     
     return f, t
-
