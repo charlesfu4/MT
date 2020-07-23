@@ -103,6 +103,73 @@ def lag_ahead_series(data, n_in=1, n_out=1, n_vars = 1, dropnan=True, nskip = 0)
         agg.dropna(inplace=True)
     return agg
 
+## convert one to multiple series
+def tfla_series(data, n_in=1, n_out=1, n_vars = 1, dropnan=True, nskip = 0):
+    df = pd.DataFrame(data)
+    cols, names = list(), list()
+    if n_in + n_out == 0:
+        return
+    # skipped sequences (t + nskip, ... t + n)
+    if nskip != 0:
+        # input sequence (t-n, ..., t-1) 
+        for j in range(n_vars):
+            for i in range(n_in, 0, -nskip):
+                cols.append(df.iloc[:,j].shift(i))
+                names.append('{}'.format(-i+n_in))
+        # forecast sequence (t+1, ..., t+n)
+        for j in range(n_vars):
+            for i in np.arange(0, n_out, nskip):
+                cols.append(df.iloc[:,j].shift(-i))
+                names += [('{}{}(t+{})'.format(df.columns[0], j+1, i))]
+    # regular sequences
+    else:
+        # input sequence (t-n, ... t-1)
+        for j in range(n_vars):
+            for i in range(n_in, 0, -1):
+                cols.append(df.iloc[:,j].shift(i))
+                names.append('{}'.format(-i+n_in))
+
+        # forecast sequence (t+1, ... t+n)
+        for j in range(n_vars):
+            for i in range(0, n_out):
+                cols.append(df.iloc[:,j].shift(-i))
+                names += [('{}{}(t+{})'.format(df.columns[0], j+1, i))]
+    # put it all together
+    agg = pd.concat(cols, axis=1)
+    agg.columns = names
+    
+    #drop rows with NaN values
+    if dropnan:
+        agg.dropna(inplace=True)
+    return agg
+
+def tf_construct(df, target_name, load_lag, target_ahead):
+    load = df['%s'% target_name]
+    ## load lag series
+    f = tfla_series(load,
+                  n_in = load_lag,
+                  n_out = 0,
+                  n_vars = 1,
+                  dropnan = True)
+    ## target part
+    t = tfla_series(load,
+                  n_in = 0,
+                  n_out = target_ahead,
+                  n_vars = 1,
+                  dropnan = True)
+    # alignment of feature and target
+    f, t = f.align(t, 'inner', axis = 0)
+    
+    return f, t
+
+## plot dataframe creation
+def plot_df(arr, name):
+    plot_df = pd.DataFrame()
+    i = 0
+    for row in arr:
+        plot_df.insert(i, "{}".format(name), row, True) 
+        i += 1
+    return plot_df
 
 def get_eval(y, yhat):
     print("MSE: {}".format(mean_squared_error(y,yhat)))
@@ -115,6 +182,7 @@ def extract_dmhq(df):
     df['wd'] = df['date'].dt.dayofweek 
     df['month'] = df['date'].dt.month
     df['day'] = df['date'].dt.day
+    df['wd'] = df['date'].dt.dayofweek
     df['hour'] = df['date'].dt.hour
     df['minute'] = df['date'].dt.minute
     df['yd'] = df['date'].dt.dayofyear
@@ -122,9 +190,9 @@ def extract_dmhq(df):
     return df
 
 ## feature/ target construction fucntion with lag variable
-def feature_target_construct(df, load_lag, target_ahead, temp_lag, temp_ahead, f_picked, tskip = 0, wd_on = False, d_on = False, m_on = False, h_on = False, q_on = False):
+def feature_target_construct(df, target_name,load_lag, target_ahead, temp_lag, temp_ahead, f_picked, tskip = 0, wd_on = False, d_on = False, m_on = False, h_on = False, q_on = False):
     tempcols = f_picked 
-    load = df['energy']
+    load = df['%s'% target_name]
     f_temp = pd.DataFrame()
     
     ## temp ahead series
