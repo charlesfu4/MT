@@ -23,7 +23,7 @@ Universal forecasting startegy on energy data with AutoML.
 
 - Training process
 
-_ Evaluation and confidence interval construction
+- Evaluation and confidence interval construction
 
 ### TPOT
 
