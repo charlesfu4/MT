@@ -75,6 +75,15 @@ def set_size_mul(width, fraction=1, subplots=(1, 1)):
 
     return (fig_width_in, fig_height_in)
 
+## plot dataframe creation
+def plot_df(arr, name):
+    plot_df = pd.DataFrame()
+    i = 0
+    for row in arr:
+        plot_df.insert(i, "{}".format(name), row, True) 
+        i += 1
+    return plot_df
+
 def plot_ci_forest(n, ci_term, estimator, features, targets):
     """confidence interval plot for forest estimator"""
 
